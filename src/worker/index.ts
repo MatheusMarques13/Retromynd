@@ -6,6 +6,7 @@ import {
   deleteSession,
   SESSION_COOKIE_NAME,
 } from "./auth";
+import { SETUP_SQL } from "./db_setup";
 import { getCookie, setCookie } from "hono/cookie";
 import { GoogleGenAI } from "@google/genai";
 import Stripe from "stripe";
@@ -120,6 +121,33 @@ app.get("/api/logout", async (c) => {
   });
 
   return c.json({ success: true }, 200);
+});
+
+// One-time database setup: creates all tables + seeds + the users table.
+// Self-disabling — once the `users` table exists it does nothing, so it's safe
+// to leave in place. Visit it once in the browser right after the first deploy.
+app.get("/api/admin/db-init", async (c) => {
+  const already = await c.env.DB
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
+    .first();
+  if (already) {
+    return c.json({ ok: true, status: "already-initialized" });
+  }
+
+  const statements = SETUP_SQL.split(";").map((s) => s.trim()).filter(Boolean);
+  let ran = 0;
+  for (const stmt of statements) {
+    try {
+      await c.env.DB.prepare(stmt).run();
+      ran++;
+    } catch (e) {
+      return c.json(
+        { ok: false, ran, total: statements.length, failed: stmt.slice(0, 160), error: String(e) },
+        500,
+      );
+    }
+  }
+  return c.json({ ok: true, status: "initialized", statementsRun: ran });
 });
 
 // ============ USER PROFILE ENDPOINTS ============
