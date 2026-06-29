@@ -135,17 +135,17 @@ app.get("/api/admin/db-init", async (c) => {
   }
 
   const statements = SETUP_SQL.split(";").map((s) => s.trim()).filter(Boolean);
+  // Run in chunks via batch() — one subrequest per chunk keeps us well under limits.
+  const CHUNK = 40;
   let ran = 0;
-  for (const stmt of statements) {
-    try {
-      await c.env.DB.prepare(stmt).run();
-      ran++;
-    } catch (e) {
-      return c.json(
-        { ok: false, ran, total: statements.length, failed: stmt.slice(0, 160), error: String(e) },
-        500,
-      );
+  try {
+    for (let i = 0; i < statements.length; i += CHUNK) {
+      const chunk = statements.slice(i, i + CHUNK).map((stmt) => c.env.DB.prepare(stmt));
+      await c.env.DB.batch(chunk);
+      ran += chunk.length;
     }
+  } catch (e) {
+    return c.json({ ok: false, ran, total: statements.length, error: String(e) }, 500);
   }
   return c.json({ ok: true, status: "initialized", statementsRun: ran });
 });
