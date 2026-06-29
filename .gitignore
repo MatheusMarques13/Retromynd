@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.wrangler/
+.bun/
+
+# Local env / secrets — NEVER commit these
+.env
+.dev.vars
+*.local
+
+# Editor / OS
+.DS_Store
+*.log
+node_modules/.tmp/
