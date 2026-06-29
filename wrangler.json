@@ -15,13 +15,7 @@
     {
       "binding": "DB",
       "database_name": "retromynd-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "R2_BUCKET",
-      "bucket_name": "retromynd-uploads"
+      "database_id": "8c8bfd88-bec5-41c6-a71f-cb46938e0c42"
     }
   ]
 }
